@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  color: #111827;
+  background: #F6F7FB; /* match screenshots */
+}
+
+/* Keep form controls readable */
+input,
+textarea,
+select {
+  color: #111827 !important;
+}
+
+/* Fix autofill background and text color */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #111827 !important;
+  -webkit-box-shadow: 0 0 0 30px white inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* For Firefox autofill */
+input:-moz-autofill,
+input:-moz-autofill-preview {
+  color: #111827 !important;
+}
