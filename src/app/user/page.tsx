@@ -5,7 +5,7 @@ import SidebarTrigger from "@/components/SidebarTrigger";
 import { useRouter } from "next/navigation";
 import { Branch } from "../manage/branch/page";
 import { useEffect, useMemo, useState } from "react";
-import { includesText, cn, rolePillClass } from "@/utils/helper";
+import { includesText, cn, rolePillClass, exportToExcel } from "@/utils/helper";
 import TableSkeleton from "@/components/TableSkeleton";
 import { toast } from "sonner";
 
@@ -186,6 +186,21 @@ export default function Page() {
     ));
   };
 
+  const handleExport = () => {
+    const visibleCols = Object.entries(columns).filter(([, col]) => col.visible);
+    const headers = visibleCols.map(([, col]) => col.label);
+    const data = filteredRows.map((r) =>
+      visibleCols.map(([key]) => {
+        if (key === "name") return r.name;
+        if (key === "email") return r.email;
+        if (key === "branch") return r.branch?.name || "-";
+        if (key === "role") return r.role;
+        return "";
+      })
+    );
+    exportToExcel("pengguna", headers, data);
+  };
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -335,7 +350,7 @@ export default function Page() {
           accept=".xlsx, .xls"
         /> */}
         <button
-          onClick={() => {}}
+          onClick={handleExport}
           className="inline-flex items-center gap-2 rounded-lg bg-jax-lime px-3 py-2 text-sm font-medium text-white hover:bg-jax-limeDark transition"
         >
           <svg

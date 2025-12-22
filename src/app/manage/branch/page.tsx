@@ -3,7 +3,7 @@
 import AppShell from "@/components/AppShell";
 import SidebarTrigger from "@/components/SidebarTrigger";
 import TableSkeleton from "@/components/TableSkeleton";
-import { includesText, cn } from "@/utils/helper";
+import { includesText, cn, exportToExcel } from "@/utils/helper";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -178,6 +178,20 @@ export default function Page() {
     ));
   };
 
+  const handleExport = () => {
+    const visibleCols = Object.entries(columns).filter(([, col]) => col.visible);
+    const headers = visibleCols.map(([, col]) => col.label);
+    const data = filteredRows.map((r) =>
+      visibleCols.map(([key]) => {
+        if (key === "name") return r.name;
+        if (key === "noTeleponAdmin") return r.noTeleponAdmin || "-";
+        if (key === "alamat") return r.alamat || "-";
+        return "";
+      })
+    );
+    exportToExcel("cabang", headers, data);
+  };
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -326,7 +340,7 @@ export default function Page() {
           accept=".xlsx, .xls"
         /> */}
         <button
-          onClick={() => {}}
+          onClick={handleExport}
           className="inline-flex items-center gap-2 rounded-lg bg-jax-lime px-3 py-2 text-sm font-medium text-white hover:bg-jax-limeDark transition"
         >
           <svg

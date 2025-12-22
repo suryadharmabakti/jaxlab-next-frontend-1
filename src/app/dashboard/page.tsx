@@ -1,5 +1,9 @@
+ "use client";
 import AppShell from '@/components/AppShell';
 import SidebarTrigger from '@/components/SidebarTrigger';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 type StatCard = {
   title: string;
@@ -23,6 +27,7 @@ type ProductRow = {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
   const stats: StatCard[] = [
     { title: 'Total Pemasukkan', value: 'Rp. 345,800', subtitle: '2 bulan terakhir' },
     { title: 'Total Transaksi Berhasil', value: '7', subtitle: '2 bulan terakhir' },
@@ -50,26 +55,49 @@ export default function DashboardPage() {
     { day: 'Minggu', value: 270_000 },
   ];
 
-  const products: ProductRow[] = [
-    {
-      name: 'Baju Adidas',
-      code: 'ADI7889',
-      category: 'Pakaian',
-      brand: 'Adidas',
-      qty: 100,
-      sellPrice: 50_000,
-      buyPrice: 23_000,
-    },
-    {
-      name: 'Batik',
-      code: 'BA36777',
-      category: 'Pakaian',
-      brand: 'Adidas',
-      qty: 400,
-      sellPrice: 120_000,
-      buyPrice: 43_000,
-    },
-  ];
+  const [products, setProducts] = useState<ProductRow[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setIsLoadingProducts(true);
+      try {
+        const user = JSON.parse(localStorage.getItem('user') ?? '{}');
+        const result = await fetch(`/api/stock?id=${user._id}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (result.status === 401) {
+          toast.error('Your session has ended. Please log in again.');
+          await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+          localStorage.removeItem('user');
+          router.replace('/login');
+          return;
+        }
+
+        const res = await result.json();
+        if (!result.ok) throw new Error(res?.error || 'Failed to load data');
+
+        const mapped: ProductRow[] = (res.data ?? []).map((r: any) => ({
+          name: r.name,
+          code: r.code,
+          category: r.produkKategori?.name ?? '-',
+          brand: r.produkMerk?.name ?? '-',
+          qty: Number(r.qty) || 0,
+          sellPrice: Number(r.harga) || 0,
+          buyPrice: Number(r.hargaModal) || 0,
+        }));
+        setProducts(mapped);
+      } catch (err) {
+        toast.error((err as Error).message);
+      } finally {
+        setIsLoadingProducts(false);
+      }
+    };
+
+    fetchProducts();
+  }, [router]);
 
   const maxSales = Math.max(...sales.map((s) => s.value));
 
@@ -181,27 +209,37 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {products.map((p) => (
-                <tr key={p.code} className="border-b border-gray-100">
-                  <td className="px-5 py-3">
-                    <div className="h-8 w-8 rounded-full bg-gray-200" />
-                  </td>
-                  <td className="px-5 py-3 text-sm text-gray-900">{p.name}</td>
-                  <td className="px-5 py-3 text-sm text-gray-700">{p.code}</td>
-                  <td className="px-5 py-3 text-sm text-gray-700">{p.category}</td>
-                  <td className="px-5 py-3 text-sm text-gray-700">{p.brand}</td>
-                  <td className="px-5 py-3 text-sm text-gray-700">{p.qty.toLocaleString('id-ID')}</td>
-                  <td className="px-5 py-3 text-sm text-gray-700">{p.sellPrice.toLocaleString('id-ID')}</td>
-                  <td className="px-5 py-3 text-sm text-gray-700">{p.buyPrice.toLocaleString('id-ID')}</td>
-                  <td className="px-5 py-3 text-right text-sm text-gray-500">…</td>
+              {isLoadingProducts ? (
+                <tr>
+                  <td colSpan={9} className="px-5 py-6 text-center text-sm text-gray-500">Memuat data…</td>
                 </tr>
-              ))}
+              ) : !products.length ? (
+                <tr>
+                  <td colSpan={9} className="px-5 py-6 text-center text-sm text-gray-500">Belum ada data produk</td>
+                </tr>
+              ) : (
+                products.map((p) => (
+                  <tr key={p.code} className="border-b border-gray-100">
+                    <td className="px-5 py-3">
+                      <div className="h-8 w-8 rounded-full bg-gray-200" />
+                    </td>
+                    <td className="px-5 py-3 text-sm text-gray-900">{p.name}</td>
+                    <td className="px-5 py-3 text-sm text-gray-700">{p.code}</td>
+                    <td className="px-5 py-3 text-sm text-gray-700">{p.category}</td>
+                    <td className="px-5 py-3 text-sm text-gray-700">{p.brand}</td>
+                    <td className="px-5 py-3 text-sm text-gray-700">{p.qty.toLocaleString('id-ID')}</td>
+                    <td className="px-5 py-3 text-sm text-gray-700">{p.sellPrice.toLocaleString('id-ID')}</td>
+                    <td className="px-5 py-3 text-sm text-gray-700">{p.buyPrice.toLocaleString('id-ID')}</td>
+                    <td className="px-5 py-3 text-right text-sm text-gray-500">…</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
         <div className="flex items-center justify-between px-5 py-3 text-xs text-gray-500">
-          <div>Page 1 of 1</div>
+          <div>Menampilkan {products.length} produk</div>
           <div className="flex items-center gap-2">
             <span>Rows per page</span>
             <span className="rounded border border-gray-200 bg-white px-2 py-1">20</span>

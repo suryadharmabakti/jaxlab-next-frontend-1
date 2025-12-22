@@ -173,7 +173,13 @@ export default function Sidebar() {
                 <div key={item.key}>
                   <button
                     type="button"
-                    onClick={() => setIsKelolaBarangOpen((v) => !v)}
+                    onClick={() => {
+                      if (!open) {
+                        router.push('/manage/product');
+                        return;
+                      }
+                      setIsKelolaBarangOpen((v) => !v);
+                    }}
                     className={cn(
                       "w-full flex items-center rounded-xl py-3 text-sm transition",
                       open ? "justify-between px-3" : "justify-center",

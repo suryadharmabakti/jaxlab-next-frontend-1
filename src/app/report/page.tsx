@@ -5,7 +5,7 @@ import SidebarTrigger from "@/components/SidebarTrigger";
 import { useRouter } from "next/navigation";
 import { Branch } from "../manage/branch/page";
 import { useEffect, useMemo, useState } from "react";
-import { includesText, cn, rolePillClass } from "@/utils/helper";
+import { includesText, cn, rolePillClass, exportToExcel } from "@/utils/helper";
 import TableSkeleton from "@/components/TableSkeleton";
 import { toast } from "sonner";
 
@@ -198,6 +198,22 @@ export default function Page() {
     ));
   };
 
+  const handleExport = () => {
+    const visibleCols = Object.entries(columns).filter(([, col]) => col.visible);
+    const headers = visibleCols.map(([, col]) => col.label);
+    const data = filteredRows.map((r) =>
+      visibleCols.map(([key]) => {
+        if (key === "namaCabang") return r.branch?.name || "-";
+        if (key === "noInvoice") return r.noInvoice?.toUpperCase() || "-";
+        if (key === "name") return r.name;
+        if (key === "date") return r.date;
+        if (key === "jumlahTransaksi") return r.jumlahTransaksi?.toLocaleString("id-ID");
+        return "";
+      })
+    );
+    exportToExcel("laporan-transaksi", headers, data);
+  };
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -307,7 +323,7 @@ export default function Page() {
 
       <div className="mt-4 flex items-center gap-2">
         <button
-          onClick={() => {}}
+          onClick={handleExport}
           className="inline-flex items-center gap-2 rounded-lg bg-jax-lime px-3 py-2 text-sm font-medium text-white hover:bg-jax-limeDark transition"
         >
           <svg

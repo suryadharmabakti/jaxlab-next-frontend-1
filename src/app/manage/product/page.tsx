@@ -3,7 +3,7 @@
 import AppShell from "@/components/AppShell";
 import SidebarTrigger from "@/components/SidebarTrigger";
 import TableSkeleton from "@/components/TableSkeleton";
-import { includesText, cn } from "@/utils/helper";
+import { includesText, cn, exportToExcel } from "@/utils/helper";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -287,6 +287,26 @@ export default function Page() {
     );
   };
 
+  const handleExport = () => {
+    const visibleCols = Object.entries(columns).filter(([, col]) => col.visible);
+    const headers = visibleCols.map(([, col]) => col.label);
+    const data = filteredRows.map((r) =>
+      visibleCols.map(([key]) => {
+        if (key === "image") return r.produk?.file ? "Gambar" : "-";
+        if (key === "name") return r.name;
+        if (key === "code") return r.code;
+        if (key === "category") return r.produkKategori?.name || "-";
+        if (key === "brand") return r.produkMerk?.name || "-";
+        if (key === "qty") return r.qty;
+        if (key === "branch") return r.cabang?.name || "-";
+        if (key === "sellPrice") return r.harga?.toLocaleString("id-ID");
+        if (key === "buyPrice") return r.hargaModal?.toLocaleString("id-ID");
+        return "";
+      })
+    );
+    exportToExcel("barang-produk", headers, data);
+  };
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -456,7 +476,7 @@ export default function Page() {
           Import
         </button>
         <button
-          onClick={() => {}}
+          onClick={handleExport}
           className="inline-flex items-center gap-2 rounded-lg bg-jax-lime px-3 py-2 text-sm font-medium text-white hover:bg-jax-limeDark transition"
         >
           <svg

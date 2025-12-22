@@ -318,7 +318,7 @@ export default function Page() {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="w-48 text-xs text-gray-600">Cabang</span>
+            <span className="w-48 text-xs text-gray-600">Kategori</span>
             <select
               value={draft.produkKategoriId}
               onChange={(e) =>
@@ -336,7 +336,7 @@ export default function Page() {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="w-48 text-xs text-gray-600">Cabang</span>
+            <span className="w-48 text-xs text-gray-600">Merk</span>
             <select
               value={draft.produkMerkId}
               onChange={(e) =>
