@@ -252,6 +252,41 @@ export default function Page() {
     ));
   };
 
+  const groupedStocks = rows.reduce<Record<string, { totalQty: number; produkCount: Set<string>; cabangName: string }>>((acc, stock) => {
+    const cabangId = stock.cabang?._id || "unknown";
+    if (!acc[cabangId]) {
+      acc[cabangId] = { totalQty: 0, produkCount: new Set(), cabangName: stock.cabang?.name || "Unknown" };
+    }
+    acc[cabangId].totalQty += stock.qty;
+    if (stock.produkId) acc[cabangId].produkCount.add(stock.produkId);
+    return acc;
+  }, {});
+
+  const stockCards = () => {
+    return (
+      <div className="flex flex-wrap gap-4">
+        {Object.values(groupedStocks).map((cabang) => (
+          <div key={cabang.cabangName} className="mt-4 rounded-2xl bg-jax-lime px-5 py-5 text-white w-full max-w-xs">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="text-xs opacity-90">
+                  Total Stok Tersedia
+                </div>
+                <div className="text-[24px] font-semibold">{cabang.totalQty}</div>
+                <div className="mt-2 text-[11px] opacity-90">
+                  Dari {cabang.produkCount.size} produk, Cabang {cabang.cabangName}
+                </div>
+              </div>
+              <div className="rounded-xl">
+                <img src="/manage.svg" alt="icon" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -441,32 +476,8 @@ export default function Page() {
         </button>
       </div>
 
-      <div className="mt-4 rounded-2xl bg-jax-lime px-5 py-4 text-white w-full max-w-xs">
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="text-xs opacity-90">Total Stok Tersedia</div>
-            {/* <div className="mt-1 text-lg font-semibold">{totalQty.toLocaleString('id-ID')}</div> */}
-            <div className="mt-1 text-[11px] opacity-90">
-              Page {filteredRows?.length} dari {rows?.length} produk
-            </div>
-          </div>
-          <div className="rounded-xl bg-white/20 p-2">
-            <svg
-              className="h-4 w-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 7h16M4 12h16M4 17h16"
-              />
-            </svg>
-          </div>
-        </div>
-      </div>
+      {/* Display Stat Stock */}
+      {stockCards()}
 
       <div className="mt-4 rounded-2xl bg-white border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">

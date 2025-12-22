@@ -418,7 +418,7 @@ export default function Page() {
         <div className="mt-5 flex items-center justify-end gap-2">
           <button
             type="button"
-            onClick={() => router.push("/manage/barang-produk")}
+            onClick={() => router.push("/manage/product")}
             className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
           >
             Batal
