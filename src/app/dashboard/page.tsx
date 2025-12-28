@@ -6,21 +6,8 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Stock } from '../manage/product/page';
 
-type StatCard = {
-  title: string;
-  value: string;
-  subtitle: string;
-};
-
 export default function DashboardPage() {
   const router = useRouter();
-  const stats: StatCard[] = [
-    { title: 'Total Pemasukkan', value: 'Rp. 345,800', subtitle: '2 bulan terakhir' },
-    { title: 'Total Transaksi Berhasil', value: '7', subtitle: '2 bulan terakhir' },
-    { title: 'Total Stok Tersedia', value: '20', subtitle: 'Dari 3 produk, Cabang Pusat' },
-    { title: 'Total Keseluruhan Stok', value: '125', subtitle: 'Dari 5 cabang' },
-  ];
-
   const [products, setProducts] = useState<Stock[]>([]);
   const [dashboard, setDashboard] = useState<any>([]);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
@@ -89,10 +76,28 @@ export default function DashboardPage() {
     }
   };
 
-  useEffect(() => {
-    fetchDashboard();
-    fetchProducts();
-  }, [router]);
+  const stats = [
+    {
+      title: 'Total Pemasukkan',
+      value: `Rp ${(dashboard.totalPemasukan2Bulan || 0).toLocaleString('id-ID')}`,
+      subtitle: '2 bulan terakhir',
+    },
+    {
+      title: 'Total Transaksi Berhasil',
+      value: dashboard.totalTransaksi2Bulan || 0,
+      subtitle: '2 bulan terakhir',
+    },
+    {
+      title: 'Total Stok Tersedia',
+      value: dashboard.totalStokCabangPusat || 0,
+      subtitle: `Dari ${dashboard.totalProdukCabangPusat || 0} produk, Cabang Pusat`,
+    },
+    {
+      title: 'Total Keseluruhan Stok',
+      value: dashboard.totalStok || 0,
+      subtitle: `Dari ${dashboard.totalCabang || 0} cabang`,
+    },
+  ];
 
   const maxSales = Math.max(
     ...(dashboard?.pendapatanPerHari?.map((s: any) => s.total) ?? [0])
@@ -104,6 +109,11 @@ export default function DashboardPage() {
     Math.round(maxSales * 0.33),
     0,
   ];
+
+  useEffect(() => {
+    fetchDashboard();
+    fetchProducts();
+  }, [router]);
 
   return (
     <AppShell>
