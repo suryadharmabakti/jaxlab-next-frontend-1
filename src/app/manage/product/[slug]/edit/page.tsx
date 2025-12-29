@@ -1,13 +1,13 @@
 "use client";
 
+import { Branch } from "@/app/manage/branch/page";
+import { Brand } from "@/app/manage/product-brand/page";
+import { Category } from "@/app/manage/product-category/page";
 import AppShell from "@/components/AppShell";
 import SidebarTrigger from "@/components/SidebarTrigger";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Stock } from "../../page";
-import { Branch } from "../../../branch/page";
-import { Brand } from "../../../product-brand/page";
-import { Category } from "../../../product-category/page";
 import { toast } from "sonner";
 
 export default function Page() {
@@ -46,10 +46,20 @@ export default function Page() {
     const hargaModal = Number(draft.hargaModal);
     const image = draft.imageDataUrl;
 
-    if (!name || !code || !cabangId || !produkKategoriId || !produkMerkId || !satuan) {
-      alert("Mohon lengkapi: Nama, Kode Produk, Cabang, Kategori, Merk, dan Satuan.");
+    if (
+      !name ||
+      !code ||
+      !cabangId ||
+      !produkKategoriId ||
+      !produkMerkId ||
+      !satuan
+    ) {
+      alert(
+        "Mohon lengkapi: Nama, Kode Produk, Cabang, Kategori, Merk, dan Satuan."
+      );
       return;
     }
+
     if (qty <= 0) {
       alert("Qty harus lebih dari 0.");
       return;
@@ -57,9 +67,12 @@ export default function Page() {
 
     try {
       const user = JSON.parse(localStorage.getItem("user") ?? "{}");
-      const result = await fetch(`/api/stock/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+
+      const result = await fetch("/api/stock", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           idOwner: user._id,
           name,
@@ -71,21 +84,24 @@ export default function Page() {
           cabangId,
           produkKategoriId,
           produkMerkId,
-          produkId: draft.produkId,
           image,
         }),
       });
 
       if (result.status === 401) {
         toast.error("Your session has ended. Please log in again.");
-        await fetch("/api/logout", { method: "POST", credentials: "include" });
+        await fetch("/api/logout", {
+          method: "POST",
+          credentials: "include",
+        });
         localStorage.removeItem("user");
         router.replace("/login");
         return;
       }
-      if (!result.ok) throw new Error("Failed to update stock product data.");
 
-      toast.success("Stock product successfully updated.");
+      if (!result.ok) throw new Error("Failed to save product data.");
+
+      toast.success("Stock product successfully added.");
       router.push("/manage/product");
     } catch (err) {
       toast.error((err as Error).message);
@@ -94,74 +110,48 @@ export default function Page() {
 
   const handlePickImage = (file: File | null) => {
     if (!file) return;
+
     if (!file.type.startsWith("image/")) {
       toast.error("File harus berupa gambar");
       return;
     }
+
     const reader = new FileReader();
     reader.onloadend = () => {
-      setDraft((p) => ({ ...p, imageDataUrl: reader.result as string }));
+      setDraft((p) => ({
+        ...p,
+        imageDataUrl: reader.result as string,
+      }));
     };
+
     reader.readAsDataURL(file);
-  };
-
-  const fetchByIdFromList = async () => {
-    try {
-      const user = JSON.parse(localStorage.getItem("user") ?? "{}");
-      const res = await fetch(`/api/stock?id=${user._id}`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (res.status === 401) {
-        toast.error("Your session has ended. Please log in again.");
-        await fetch("/api/logout", { method: "POST", credentials: "include" });
-        localStorage.removeItem("user");
-        router.replace("/login");
-        return;
-      }
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Failed to load data");
-
-      const found = (data.data ?? []).find((r: any) => r._id === id);
-      if (!found) throw new Error("Produk tidak ditemukan");
-
-      setDraft({
-        _id: found._id,
-        name: found.name ?? "",
-        code: found.code ?? "",
-        qty: Number(found.qty) || 0,
-        harga: Number(found.harga) || 0,
-        hargaModal: Number(found.hargaModal) || 0,
-        satuan: found.satuan ?? "",
-        cabangId: found.cabang?._id ?? found.cabangId ?? "",
-        produkId: found.produkId ?? "",
-        produkKategoriId: found.produkKategori?._id ?? found.produkKategoriId ?? "",
-        produkMerkId: found.produkMerk?._id ?? found.produkMerkId ?? "",
-        imageDataUrl: found.produk?.file ?? "",
-        cabang: found.cabang,
-        produkKategori: found.produkKategori,
-        produkMerk: found.produkMerk,
-        produk: found.produk,
-      });
-    } catch (err) {
-      toast.error((err as Error).message);
-    }
   };
 
   const fetchBranchData = async () => {
     try {
       const user = JSON.parse(localStorage.getItem("user") ?? "{}");
-      const result = await fetch(`/api/branch?id=${user._id}`, { method: "GET", headers: { "Content-Type": "application/json" } });
+
+      const result = await fetch(`/api/branch?id=${user._id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
       if (result.status === 401) {
         toast.error("Your session has ended. Please log in again.");
-        await fetch("/api/logout", { method: "POST", credentials: "include" });
+        await fetch("/api/logout", {
+          method: "POST",
+          credentials: "include",
+        });
         localStorage.removeItem("user");
         router.replace("/login");
         return;
       }
+
       const res = await result.json();
       if (!result.ok) throw new Error(res?.error || "Failed to load data");
+
       setBranches(res.data ?? []);
     } catch (err) {
       toast.error((err as Error).message);
@@ -171,16 +161,28 @@ export default function Page() {
   const fetchCategoryData = async () => {
     try {
       const user = JSON.parse(localStorage.getItem("user") ?? "{}");
-      const result = await fetch(`/api/product-category?id=${user._id}`, { method: "GET", headers: { "Content-Type": "application/json" } });
+
+      const result = await fetch(`/api/product-category?id=${user._id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
       if (result.status === 401) {
         toast.error("Your session has ended. Please log in again.");
-        await fetch("/api/logout", { method: "POST", credentials: "include" });
+        await fetch("/api/logout", {
+          method: "POST",
+          credentials: "include",
+        });
         localStorage.removeItem("user");
         router.replace("/login");
         return;
       }
+
       const res = await result.json();
       if (!result.ok) throw new Error(res?.error || "Failed to load data");
+
       setCategories(res.data ?? []);
     } catch (err) {
       toast.error((err as Error).message);
@@ -190,32 +192,76 @@ export default function Page() {
   const fetchBrandData = async () => {
     try {
       const user = JSON.parse(localStorage.getItem("user") ?? "{}");
-      const result = await fetch(`/api/product-brand?id=${user._id}`, { method: "GET", headers: { "Content-Type": "application/json" } });
+
+      const result = await fetch(`/api/product-brand?id=${user._id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
       if (result.status === 401) {
         toast.error("Your session has ended. Please log in again.");
-        await fetch("/api/logout", { method: "POST", credentials: "include" });
+        await fetch("/api/logout", {
+          method: "POST",
+          credentials: "include",
+        });
         localStorage.removeItem("user");
         router.replace("/login");
         return;
       }
+
       const res = await result.json();
       if (!result.ok) throw new Error(res?.error || "Failed to load data");
+
       setBrands(res.data ?? []);
     } catch (err) {
       toast.error((err as Error).message);
     }
   };
 
+  const fetchById = async () => {
+    try {
+      const res = await fetch(`/api/stock/${id}`);
+
+      if (!res.ok) throw new Error("Failed to retrieve product brand data");
+
+      const data = await res.json();
+
+      setDraft({
+        _id: data.data._id ?? "",
+        name: data.data.name ?? "",
+        code: data.data.code ?? "",
+        qty: Number(data.data.qty ?? 0),
+        harga: Number(data.data.harga ?? 0),
+        hargaModal: Number(data.data.hargaModal ?? 0),
+        satuan: data.data.satuan ?? "",
+        cabangId: data.data.cabangId ?? "",
+        produkKategoriId: data.data.produkKategoriId ?? "",
+        produkMerkId: data.data.produkMerkId ?? "",
+        imageDataUrl: data.data.image ?? "",
+      });
+    
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
   useEffect(() => {
-    fetchByIdFromList();
     fetchBranchData();
     fetchBrandData();
     fetchCategoryData();
+  }, []);
+
+  useEffect(() => {
+    if (!id) return;
+    fetchById();
   }, [id]);
 
   return (
     <AppShell>
       <div className="flex items-center justify-between">
+        {/* Header */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3 mb-5">
             <SidebarTrigger />
@@ -238,17 +284,28 @@ export default function Page() {
         <div className="mt-4 flex flex-col gap-4">
           <div className="flex items-center gap-4">
             <span className="w-48 text-xs text-gray-600">Gambar Produk</span>
+
             <div className="flex-1 flex items-center gap-4">
               {draft.imageDataUrl ? (
-                <img src={draft.imageDataUrl} alt="preview" className="h-20 w-20 rounded-2xl object-cover border border-gray-200" />
+                <img
+                  src={draft.imageDataUrl}
+                  alt="preview"
+                  className="h-20 w-20 rounded-2xl object-cover border border-gray-200"
+                />
               ) : (
                 <div className="h-20 w-20 rounded-2xl bg-gray-100 border border-dashed border-gray-300 flex items-center justify-center text-xs text-gray-400">
                   Preview
                 </div>
               )}
+
               <label className="cursor-pointer rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
                 Pilih Gambar
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePickImage(e.target.files?.[0] ?? null)} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handlePickImage(e.target.files?.[0] ?? null)}
+                />
               </label>
             </div>
           </div>
@@ -257,7 +314,9 @@ export default function Page() {
             <span className="w-48 text-xs text-gray-600">Nama</span>
             <input
               value={draft.name}
-              onChange={(e) => setDraft((p) => ({ ...p, name: e.target.value }))}
+              onChange={(e) =>
+                setDraft((p) => ({ ...p, name: e.target.value }))
+              }
               className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-jax-lime"
               placeholder="nama produk"
             />
@@ -267,7 +326,9 @@ export default function Page() {
             <span className="w-48 text-xs text-gray-600">Kode Produk</span>
             <input
               value={draft.code}
-              onChange={(e) => setDraft((p) => ({ ...p, code: e.target.value }))}
+              onChange={(e) =>
+                setDraft((p) => ({ ...p, code: e.target.value }))
+              }
               className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-jax-lime"
               placeholder="kode produk"
             />
@@ -277,7 +338,9 @@ export default function Page() {
             <span className="w-48 text-xs text-gray-600">Cabang</span>
             <select
               value={draft.cabangId}
-              onChange={(e) => setDraft((p) => ({ ...p, cabangId: e.target.value }))}
+              onChange={(e) =>
+                setDraft((p) => ({ ...p, cabangId: e.target.value }))
+              }
               className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
             >
               <option value="">Pilih Cabang</option>
@@ -293,7 +356,9 @@ export default function Page() {
             <span className="w-48 text-xs text-gray-600">Kategori</span>
             <select
               value={draft.produkKategoriId}
-              onChange={(e) => setDraft((p) => ({ ...p, produkKategoriId: e.target.value }))}
+              onChange={(e) =>
+                setDraft((p) => ({ ...p, produkKategoriId: e.target.value }))
+              }
               className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
             >
               <option value="">Pilih Produk Kategori</option>
@@ -309,7 +374,9 @@ export default function Page() {
             <span className="w-48 text-xs text-gray-600">Merk</span>
             <select
               value={draft.produkMerkId}
-              onChange={(e) => setDraft((p) => ({ ...p, produkMerkId: e.target.value }))}
+              onChange={(e) =>
+                setDraft((p) => ({ ...p, produkMerkId: e.target.value }))
+              }
               className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
             >
               <option value="">Pilih Produk Merk</option>
@@ -325,7 +392,9 @@ export default function Page() {
             <span className="w-48 text-xs text-gray-600">Qty</span>
             <input
               value={draft.qty}
-              onChange={(e) => setDraft((p) => ({ ...p, qty: Number(e.target.value) }))}
+              onChange={(e) =>
+                setDraft((p) => ({ ...p, qty: Number(e.target.value) }))
+              }
               className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-jax-lime"
               placeholder="0"
               inputMode="numeric"
@@ -333,10 +402,14 @@ export default function Page() {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="w-48 text-xs text-gray-600">Harga Jual per satuan</span>
+            <span className="w-48 text-xs text-gray-600">
+              Harga Jual per satuan
+            </span>
             <input
               value={draft.harga}
-              onChange={(e) => setDraft((p) => ({ ...p, harga: Number(e.target.value) }))}
+              onChange={(e) =>
+                setDraft((p) => ({ ...p, harga: Number(e.target.value) }))
+              }
               className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-jax-lime"
               placeholder="0"
               inputMode="numeric"
@@ -344,10 +417,14 @@ export default function Page() {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="w-48 text-xs text-gray-600">Harga Beli per satuan</span>
+            <span className="w-48 text-xs text-gray-600">
+              Harga Beli per satuan
+            </span>
             <input
               value={draft.hargaModal}
-              onChange={(e) => setDraft((p) => ({ ...p, hargaModal: Number(e.target.value) }))}
+              onChange={(e) =>
+                setDraft((p) => ({ ...p, hargaModal: Number(e.target.value) }))
+              }
               className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-jax-lime"
               placeholder="0"
               inputMode="numeric"
@@ -358,7 +435,9 @@ export default function Page() {
             <span className="w-48 text-xs text-gray-600">Satuan</span>
             <select
               value={draft.satuan}
-              onChange={(e) => setDraft((p) => ({ ...p, satuan: e.target.value }))}
+              onChange={(e) =>
+                setDraft((p) => ({ ...p, satuan: e.target.value }))
+              }
               className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
             >
               <option value="">Pilih Satuan</option>

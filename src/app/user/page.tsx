@@ -28,6 +28,9 @@ export default function Page() {
   const [isLoading, setIsLoading] = useState(false);
   const [openColumns, setOpenColumns] = useState(false);
   const [openActionId, setOpenActionId] = useState<string | null>(null);
+  const [openImport, setOpenImport] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [columns, setColumns] = useState<Record<string, any>>({
     name: { label: "Nama", visible: true },
@@ -182,6 +185,96 @@ export default function Page() {
         </td>
       </tr>
     ));
+  };
+
+  const renderModalImport = () => {
+    if (!openImport) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="w-full max-w-md rounded-2xl bg-white p-6">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Import Pengguna (Karyawan)
+          </h2>
+
+          <p className="mt-1 text-sm text-gray-500">
+            Unduh template lalu unggah file Excel yang sudah diisi.
+          </p>
+
+          {/* Download template */}
+          <a
+            href="/template_user.xlsx"
+            download
+            className="mt-4 inline-block text-sm font-medium text-jax-lime hover:underline"
+          >
+            ⬇ Download Template Excel
+          </a>
+
+          {/* File input */}
+          <div className="mt-4">
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={(e) =>
+                setImportFile(e.target.files?.[0] || null)
+              }
+              className="block w-full text-sm text-gray-700"
+            />
+          </div>
+
+          {/* Action */}
+          <div className="mt-6 flex justify-end gap-2">
+            <button
+              onClick={() => setOpenImport(false)}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm"
+            >
+              Batal
+            </button>
+
+            <button
+              disabled={!importFile || isImporting}
+              onClick={handleImport}
+              className="rounded-lg bg-jax-lime px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            >
+              {isImporting ? "Mengimpor..." : "Import"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const handleImport = async () => {
+    if (!importFile) return;
+
+    try {
+      setIsImporting(true);
+
+      const user = JSON.parse(localStorage.getItem("user") ?? "{}");
+
+      const formData = new FormData();
+      formData.append("file", importFile);
+      formData.append("idOwner", user._id);
+
+      const res = await fetch("/api/user/import", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Import gagal");
+      }
+
+      toast.success("Import berhasil");
+      setOpenImport(false);
+      setImportFile(null);
+      fetchData();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   const handleExport = () => {
@@ -340,15 +433,8 @@ export default function Page() {
         >
           <span className="text-base leading-none">+</span> Tambah
         </button>
-        {/* <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          className="hidden"
-          accept=".xlsx, .xls"
-        /> */}
         <button
-          onClick={handleExport}
+          onClick={() => setOpenImport(true)}
           className="inline-flex items-center gap-2 rounded-lg bg-jax-lime px-3 py-2 text-sm font-medium text-white hover:bg-jax-limeDark transition"
         >
           <svg
@@ -367,7 +453,7 @@ export default function Page() {
           Import
         </button>
         <button
-          onClick={() => {}}
+          onClick={handleExport}
           className="inline-flex items-center gap-2 rounded-lg bg-jax-lime px-3 py-2 text-sm font-medium text-white hover:bg-jax-limeDark transition"
         >
           <svg
@@ -409,6 +495,8 @@ export default function Page() {
           </div>
         </div>
       </div>
+
+      {renderModalImport()}
     </AppShell>
   );
 }
